@@ -1,7 +1,9 @@
 import os
 import sqlite3
 from datetime import date
+
 import argparse
+
 from fpdf import FPDF
 import smtplib
 from email.message import EmailMessage
@@ -29,6 +31,7 @@ def calculate_monthly_total(conn, customer_id, billing_month):
 
 def generate_invoice(customer, amount, billing_month):
     pdf = FPDF()
+
     pdf.set_margins(20, 20, 20)
     pdf.add_page()
 
@@ -66,11 +69,13 @@ def send_email_with_invoice(customer, pdf_path, amount):
         msg.add_attachment(f.read(), maintype='application', subtype='pdf', filename=os.path.basename(pdf_path))
 
     # Configure your SMTP server details here
+
     try:
         with smtplib.SMTP('localhost') as s:
             s.send_message(msg)
     except Exception as exc:
         print(f"Failed to send email to {customer['email']}: {exc}")
+
 
 
 def send_monthly_invoices(billing_month):
@@ -90,8 +95,10 @@ def send_monthly_invoices(billing_month):
 
 
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser(description='Send monthly utility invoices')
     parser.add_argument('--month', help='Billing month in YYYY-MM format')
     args = parser.parse_args()
     month = args.month or date.today().strftime('%Y-%m')
     send_monthly_invoices(month)
+

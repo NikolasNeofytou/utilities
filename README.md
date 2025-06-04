@@ -13,6 +13,7 @@ This repository contains a minimal Python implementation for generating and emai
    ```
 
 ## Usage
+
 Run the billing service to send invoices. By default it processes the current
 month, but you can specify a particular month (useful with the sample data):
 ```bash
@@ -20,5 +21,6 @@ python billing_service.py --month 2023-07
 ```
 
 The service connects to a SQLite database, calculates the monthly charges for each customer, generates a PDF invoice, and emails it to the customer. Invoices are styled with larger fonts and extra spacing for readability, and the **Pay Now** link in the PDF is clickable for online payment.
+
 
 Adjust SMTP settings in `billing_service.py` to point to your email server.
