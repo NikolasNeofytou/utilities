@@ -1,6 +1,9 @@
 import os
 import sqlite3
 from datetime import date
+
+import argparse
+
 from fpdf import FPDF
 import smtplib
 from email.message import EmailMessage
@@ -28,17 +31,25 @@ def calculate_monthly_total(conn, customer_id, billing_month):
 
 def generate_invoice(customer, amount, billing_month):
     pdf = FPDF()
+
+    pdf.set_margins(20, 20, 20)
     pdf.add_page()
-    pdf.set_font('Arial', 'B', 16)
-    pdf.cell(40, 10, f"Invoice for {customer['name']}")
-    pdf.ln(10)
-    pdf.set_font('Arial', '', 12)
-    pdf.cell(40, 10, f'Month: {billing_month}')
-    pdf.ln(10)
-    pdf.cell(40, 10, f'Total amount due: ${amount:.2f}')
-    pdf.ln(10)
+
+    pdf.set_font("Helvetica", "B", 20)
+    pdf.cell(0, 12, f"Invoice for {customer['name']}", ln=True)
+    pdf.ln(5)
+
+    pdf.set_font("Helvetica", "", 14)
+    pdf.cell(0, 10, f"Month: {billing_month}", ln=True)
+    pdf.cell(0, 10, f"Total amount due: ${amount:.2f}", ln=True)
+    pdf.ln(15)
+
     pay_url = PAY_URL_TEMPLATE.format(id=customer['id'], amount=amount)
-    pdf.cell(40, 10, f'Pay now: {pay_url}')
+    pdf.set_text_color(0, 0, 255)
+    pdf.set_font("Helvetica", "U", 14)
+    pdf.write(10, "Pay Now", pay_url)
+    pdf.set_text_color(0, 0, 0)
+
     pdf_path = os.path.join(INVOICE_DIR, f"invoice_{customer['id']}_{billing_month}.pdf")
     pdf.output(pdf_path)
     return pdf_path
@@ -58,8 +69,13 @@ def send_email_with_invoice(customer, pdf_path, amount):
         msg.add_attachment(f.read(), maintype='application', subtype='pdf', filename=os.path.basename(pdf_path))
 
     # Configure your SMTP server details here
-    with smtplib.SMTP('localhost') as s:
-        s.send_message(msg)
+
+    try:
+        with smtplib.SMTP('localhost') as s:
+            s.send_message(msg)
+    except Exception as exc:
+        print(f"Failed to send email to {customer['email']}: {exc}")
+
 
 
 def send_monthly_invoices(billing_month):
@@ -79,5 +95,10 @@ def send_monthly_invoices(billing_month):
 
 
 if __name__ == '__main__':
-    today = date.today().strftime('%Y-%m')  # e.g., 2023-07
-    send_monthly_invoices(today)
+
+    parser = argparse.ArgumentParser(description='Send monthly utility invoices')
+    parser.add_argument('--month', help='Billing month in YYYY-MM format')
+    args = parser.parse_args()
+    month = args.month or date.today().strftime('%Y-%m')
+    send_monthly_invoices(month)
+
